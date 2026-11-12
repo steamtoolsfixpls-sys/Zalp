@@ -1,0 +1,102 @@
+{
+ "01_soldier_ru_ratnik.glb": {
+  "bytes": 1627352,
+  "sha1": "152e4c8a7489",
+  "tris": 15570
+ },
+ "02_soldier_ua_infantry.glb": {
+  "bytes": 1651072,
+  "sha1": "e6d2177ca102",
+  "tris": 20396
+ },
+ "03_unit_ua_javelin.glb": {
+  "bytes": 747092,
+  "sha1": "e271fb1fe44a",
+  "tris": 20500
+ },
+ "04_weapon_ak12.glb": {
+  "bytes": 2807620,
+  "sha1": "41fbfd26c6de",
+  "tris": 28640
+ },
+ "05_weapon_ak74m.glb": {
+  "bytes": 1037168,
+  "sha1": "497e63567581",
+  "tris": 17595
+ },
+ "06_weapon_rpg7.glb": {
+  "bytes": 438312,
+  "sha1": "61874170fd4e",
+  "tris": 8582
+ },
+ "07_weapon_m4a1.glb": {
+  "bytes": 1146484,
+  "sha1": "b1dda12f363c",
+  "tris": 9170
+ },
+ "08_vehicle_bmp2_ua.glb": {
+  "bytes": 3347412,
+  "sha1": "ea17cab92332",
+  "tris": 66451
+ },
+ "09_vehicle_btr80_ru.glb": {
+  "bytes": 976340,
+  "sha1": "44cb8a9e57ed",
+  "tris": 42690
+ },
+ "10_vehicle_bradley_m2a3_ua.glb": {
+  "bytes": 408856,
+  "sha1": "036190d81451",
+  "tris": 11772
+ },
+ "11_vehicle_humvee_ua.glb": {
+  "bytes": 1298796,
+  "sha1": "8754940d031f",
+  "tris": 13760
+ },
+ "12_vehicle_tank_t90m_ru.glb": {
+  "bytes": 2475072,
+  "sha1": "bd3f12f95c15",
+  "tris": 39355
+ },
+ "13_vehicle_tank_t72b3_ru.glb": {
+  "bytes": 2071548,
+  "sha1": "067d00ef589a",
+  "tris": 49056
+ },
+ "14_vehicle_uaz452_bukhanka.glb": {
+  "bytes": 565696,
+  "sha1": "f49b7d1c3577",
+  "tris": 7970
+ },
+ "15_drone_fpv_kamikaze.glb": {
+  "bytes": 343240,
+  "sha1": "66f75d034e39",
+  "tris": 12488
+ },
+ "16_drone_dji_mavic3.glb": {
+  "bytes": 264256,
+  "sha1": "0dae8a7b46db",
+  "tris": 10158
+ },
+ "17_drone_zala_lancet.glb": {
+  "bytes": 93168,
+  "sha1": "c0a43b7d0590",
+  "tris": 9760
+ },
+ "18_fortification_trench_system.glb": {
+  "bytes": 1543080,
+  "sha1": "e46c11ded3dc",
+  "tris": 54892
+ },
+ "19_fortification_dragons_teeth.glb": {
+  "bytes": 153664,
+  "sha1": "afb0b33e41c2",
+  "tris": 208
+ },
+ "20_fortification_hesco_bastion.glb": {
+  "bytes": 145544,
+  "sha1": "67f17dd62465",
+  "tris": 832
+ }
+}

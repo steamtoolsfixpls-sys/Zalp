@@ -1,0 +1,21 @@
+{
+  "name": "tactical-web-battle",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Browser tactical battle sandbox on three.js + Rapier3D",
+  "scripts": {
+    "start": "node tools/serve.mjs 8080",
+    "assets": "node tools/optimize-assets.mjs",
+    "smoke": "node tools/smoke.mjs tools/scenarios/basic.mjs --query \"quality=low&dynamicResolution=false\""
+  },
+  "devDependencies": {
+    "@gltf-transform/core": "^4.5.1",
+    "@gltf-transform/extensions": "^4.5.1",
+    "@gltf-transform/functions": "^4.5.1",
+    "meshoptimizer": "^1.3.0",
+    "puppeteer-core": "^25.17.0",
+    "sharp": "^0.35.5",
+    "three": "^0.170.0"
+  }
+}

@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D TACTICAL WEB BATTLE — ARMOR, DESANT & RAPIER3D PHYSICS</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #0d1012;
+            font-family: 'Consolas', 'Courier New', monospace;
+            color: #e6ece8;
+        }
+        #viewport {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #loading-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: radial-gradient(circle at center, #182026 0%, #0b0e11 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 18px;
+        }
+        .load-title {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: #f0f4f8;
+            text-align: center;
+        }
+        .load-bar-wrap {
+            width: 480px;
+            max-width: 86vw;
+            height: 12px;
+            background: #1f2930;
+            border: 1px solid #3c4d59;
+            overflow: hidden;
+        }
+        #loading-bar-fill {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #b82929, #e67e22);
+            transition: width 0.15s ease;
+        }
+        #loading-status-text {
+            font-size: 13px;
+            color: #9fb1bd;
+            letter-spacing: 1px;
+        }
+        #start-panel {
+            position: fixed;
+            inset: 0;
+            z-index: 90;
+            background: rgba(9, 12, 15, 0.86);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 22px;
+        }
+        .brief-box {
+            width: 760px;
+            max-width: 94vw;
+            background: rgba(18, 24, 29, 0.96);
+            border: 1px solid #394854;
+            padding: 28px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75);
+        }
+        .brief-header {
+            font-size: 21px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            margin-bottom: 14px;
+            color: #ffffff;
+            border-bottom: 1px solid #2e3b46;
+            padding-bottom: 10px;
+        }
+        .brief-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px 18px;
+            font-size: 13px;
+            color: #b7c4ce;
+            margin-bottom: 22px;
+            line-height: 1.6;
+        }
+        .faction-buttons {
+            display: flex;
+            gap: 16px;
+        }
+        .btn-faction {
+            flex: 1;
+            padding: 15px 18px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            color: #ffffff;
+            transition: transform 0.1s ease, filter 0.15s ease;
+        }
+        .btn-faction:hover {
+            filter: brightness(1.18);
+            transform: translateY(-2px);
+        }
+        #btn-faction-ru {
+            background: linear-gradient(135deg, #7c1616, #b82020);
+            border-color: #ff5555;
+        }
+        #btn-faction-ua {
+            background: linear-gradient(135deg, #123c8a, #1d5ed6);
+            border-color: #5599ff;
+        }
+        #hud-layer {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 20;
+        }
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 16px;
+            height: 16px;
+            transform: translate(-50%, -50%);
+        }
+        #crosshair::before, #crosshair::after {
+            content: '';
+            position: absolute;
+            background: rgba(255, 255, 255, 0.76);
+        }
+        #crosshair::before {
+            top: 7px;
+            left: 0;
+            width: 16px;
+            height: 2px;
+        }
+        #crosshair::after {
+            left: 7px;
+            top: 0;
+            width: 2px;
+            height: 16px;
+        }
+        #hit-marker {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 24px;
+            height: 24px;
+            transform: translate(-50%, -50%) rotate(45deg);
+            opacity: 0;
+            transition: opacity 0.08s ease;
+        }
+        .hit-body {
+            border: 2px solid #ffffff;
+        }
+        .hit-head {
+            border: 2px solid #ff2a2a;
+            box-shadow: 0 0 10px #ff2a2a;
+        }
+        #vehicle-interact-prompt {
+            position: absolute;
+            bottom: 108px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(12, 17, 22, 0.88);
+            border: 1px solid #e2b955;
+            border-left: 5px solid #e2b955;
+            padding: 10px 20px;
+            font-size: 13px;
+            line-height: 1.65;
+            color: #f0f4f8;
+            text-align: center;
+            display: none;
+            min-width: 580px;
+        }
+        #kill-feed {
+            position: absolute;
+            top: 18px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            align-items: flex-end;
+        }
+        .kill-item {
+            background: rgba(12, 16, 20, 0.78);
+            border-right: 3px solid #d93636;
+            padding: 5px 10px;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+        .k-atk { color: #8fe88f; font-weight: 700; }
+        .k-wep { color: #e2b955; }
+        .k-vic { color: #ff6b6b; font-weight: 700; }
+        .k-dst { color: #9ab0c2; margin-left: 6px; }
+        #top-left-telemetry {
+            position: absolute;
+            top: 18px;
+            left: 20px;
+            background: rgba(12, 16, 20, 0.78);
+            border-left: 3px solid #8fe88f;
+            padding: 10px 14px;
+            font-size: 12px;
+            line-height: 1.65;
+        }
+        #squad-order-banner {
+            margin-top: 6px;
+            color: #9ab0c2;
+            font-weight: 700;
+        }
+        #squad-order-banner.active-assault {
+            color: #ffaa33;
+        }
+        #bottom-right-weapon {
+            position: absolute;
+            bottom: 22px;
+            right: 24px;
+            background: rgba(12, 16, 20, 0.84);
+            border-right: 4px solid #e2b955;
+            padding: 12px 18px;
+            text-align: right;
+            min-width: 310px;
+        }
+        #hud-weapon-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: #e2b955;
+            letter-spacing: 1px;
+        }
+        #hud-ammo-count {
+            font-size: 25px;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 4px 0;
+        }
+        #hud-reload-state {
+            font-size: 11px;
+            letter-spacing: 0.6px;
+        }
+        #bottom-left-controls {
+            position: absolute;
+            bottom: 22px;
+            left: 24px;
+            background: rgba(12, 16, 20, 0.78);
+            border-left: 3px solid #597387;
+            padding: 10px 14px;
+            font-size: 11px;
+            line-height: 1.65;
+            color: #b7c4ce;
+        }
+        #fpv-osd {
+            position: absolute;
+            inset: 0;
+            display: none;
+            border: 24px solid rgba(15, 20, 18, 0.45);
+        }
+        .fpv-center-reticle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 140px;
+            height: 90px;
+            transform: translate(-50%, -50%);
+            border: 1px dashed rgba(143, 232, 143, 0.75);
+        }
+        .fpv-top-bar {
+            position: absolute;
+            top: 38px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(10, 14, 12, 0.82);
+            padding: 6px 18px;
+            border: 1px solid #8fe88f;
+            color: #8fe88f;
+            font-size: 13px;
+            letter-spacing: 2px;
+        }
+    </style>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+            "@dimforge/rapier3d-compat": "https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.14.0/+esm"
+        }
+    }
+    </script>
+    <link rel="icon" href="data:,">
+</head>
+<body>
+    <div id="viewport"></div>
+
+    <div id="loading-overlay">
+        <div class="load-title">ИНИЦИАЛИЗАЦИЯ ФИЗИКИ БРОНЕТЕХНИКИ, ДЕСАНТА И RAPIER3D RAGDOLL (20 МОДЕЛЕЙ)</div>
+        <div class="load-bar-wrap">
+            <div id="loading-bar-fill"></div>
+        </div>
+        <div id="loading-status-text">ПОДГОТОВКА ФИЗИЧЕСКОГО ЯДРА RAPIER3D WASM...</div>
+    </div>
+
+    <div id="start-panel">
+        <div class="brief-box">
+            <div class="brief-header">3D ПОЛИГОН ФИЗИКИ: ТАНКИ, ПЕРЕВОЗКА НА БТР, FPV-ДРОНЫ И RAGDOLL</div>
+            <div class="brief-grid">
+                <div>• <b>[F] у БТР / Танка</b>: Сесть за рычаги и орудие (Мехвод + Наводчик)</div>
+                <div>• <b>[B] у БТР / Танка</b>: Сесть десантом НА БРОНЮ и вести огонь с ходу</div>
+                <div>• <b>[H]</b>: Посадить / Спешить отряд пехоты на броню БТР или Танка</div>
+                <div>• <b>[T]</b>: Включить ИИ-автопилот мехвода (пока вы едете на броне)</div>
+                <div>• <b>[K] в технике</b>: Переключить камеру (Вид от 3-го лица / Прицел)</div>
+                <div>• <b>[V] / [N]</b>: Запуск управляемого FPV-дрона ПГ-7В / БПЛА «Ланцет-3»</div>
+                <div>• <b>[1] [2] [3] [4] + [R]</b>: АК-12 / M4A1 / АК-74М / РПГ-7В2 + Перезарядка 30+1</div>
+                <div>• <b>[G]</b>: Приказ спешенному отряду «Штурм рубежа противника»</div>
+            </div>
+            <div class="faction-buttons">
+                <button id="btn-faction-ru" class="btn-faction">ЗАПУСТИТЬ ПОЛИГОН: ВС РФ (КРАСНАЯ ПОВЯЗКА • АК-12 • Т-90М / БТР-80)</button>
+                <button id="btn-faction-ua" class="btn-faction">ЗАПУСТИТЬ ПОЛИГОН: ВСУ (СИНЯЯ ПОВЯЗКА • M4A1 • BRADLEY / БМП-2)</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="hud-layer">
+        <div id="crosshair"></div>
+        <div id="hit-marker"></div>
+
+        <div id="top-left-telemetry">
+            <div>ЛИКВИДИРОВАНО: <b id="hud-kills">0</b> | В ГОЛОВУ (СРЫВ ШЛЕМА): <b id="hud-headshots">0</b></div>
+            <div>ФИЗИКА: <b>RAPIER3D RAYCAST SUSPENSION + 11-BONE RAGDOLL</b> | ПЕРЕВОЗКА: <b>ДЕСАНТ НА БРОНЕ БТР/ТАНКОВ</b></div>
+            <div id="squad-order-banner">ДЕСАНТ НА БРОНЕ БТР-80 ГОТОВ К ВЫЕЗДУ [H — ПОСАДКА/ВЫСАДКА • G — ШТУРМ]</div>
+        </div>
+
+        <div id="vehicle-interact-prompt"></div>
+
+        <div id="kill-feed"></div>
+
+        <div id="bottom-left-controls">
+            <b>[F]</b> Водитель/Наводчик &nbsp; <b>[B]</b> Ехать на броне &nbsp; <b>[H]</b> Посадить/Спешить отряд на БТР/Танк &nbsp; <b>[T]</b> Автопилот БТР/Танка &nbsp; <b>[K]</b> Камера<br>
+            <b>[1-4]</b> АК-12 / M4A1 / АК-74М / РПГ-7В2 &nbsp; <b>[R]</b> Перезарядка &nbsp; <b>[Q/E]</b> Наклон &nbsp; <b>[V]</b> FPV-Дрон &nbsp; <b>[N]</b> Ланцет-3 &nbsp; <b>[G]</b> Штурм
+        </div>
+
+        <div id="bottom-right-weapon">
+            <div id="hud-weapon-name">АК-12 (5.45x39)</div>
+            <div id="hud-ammo-count">30 / 180</div>
+            <div id="hud-reload-state">ГОТОВ К БОЮ [ПАТРОН В ПАТРОННИКЕ]</div>
+        </div>
+
+        <div id="fpv-osd">
+            <div class="fpv-top-bar">
+                БПЛА КАМИКАДЗЕ | БАТАРЕЯ: <span id="fpv-battery-val">100%</span> | ВЫСОТА: <span id="fpv-alt-val">15.0 М</span> | СКОРОСТЬ: <span id="fpv-spd-val">65 КМ/Ч</span> | [ЛКМ] ПОДРЫВ / [V] ОТМЕНА
+            </div>
+            <div class="fpv-center-reticle"></div>
+        </div>
+    </div>
+
+    <script>
+        if (location.protocol === 'file:') {
+            const st = document.getElementById('loading-status-text');
+            if (st) st.textContent = 'ОШИБКА: ОТКРЫТО ЧЕРЕЗ FILE:// (CORS БЛОКИРУЕТ МОДУЛИ). ЗАПУСТИТЕ START_GAME.BAT ИЛИ NPM START';
+        }
+    </script>
+    <script type="module" src="./battle_engine.js"></script>
+</body>
+</html>
