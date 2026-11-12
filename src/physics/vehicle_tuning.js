@@ -19,42 +19,44 @@ export function torqueAt(x) {
 }
 
 // mass kg, powerKw at the flywheel, top / reverse speed km/h, track = half distance between wheel or
-// track centres (m), axles = suspension station z (m, negative is forward), wheelR = road wheel radius,
+// track centres (m), axles = suspension station z (m, negative is forward), hullZ = front and rear end of
+// the hull (the mesh origin is the bounding box centre, which a long gun pulls ahead of the hull centre),
+// wheelR = road wheel radius; all four are measured on the rigged models (tools/vehicle-rig.mjs),
 // freq / damp = suspension natural frequency (Hz) and damping ratio, comY = centre of mass above ground.
 const TABLE = {
     t90m_ru: {
         mass: 46000, powerKw: 840, rpmIdle: 800, rpmMax: 2000, gears: 7, topKmh: 61, reverseKmh: 9, shift: 0.42,
-        track: 1.42, axles: [-2.1, -0.7, 0.7, 2.1], wheelR: 0.375, freq: 1.75, damp: 0.62, comY: 1.0, pivotRate: 0.7,
+        track: 1.31, axles: [-0.87, 0.43, 1.73, 3.03], hullZ: [-2.0, 4.55], wheelR: 0.36, freq: 1.75, damp: 0.62, comY: 1.0, pivotRate: 0.7,
         tractive: 0.6
     },
     t72b3_ru: {
         mass: 46000, powerKw: 843, rpmIdle: 800, rpmMax: 2000, gears: 7, topKmh: 60, reverseKmh: 9, shift: 0.45,
-        track: 1.4, axles: [-2.1, -0.7, 0.7, 2.1], wheelR: 0.375, freq: 1.75, damp: 0.62, comY: 1.0, pivotRate: 0.68,
+        track: 1.3, axles: [-0.95, 0.34, 1.63, 2.92], hullZ: [-1.96, 4.45], wheelR: 0.34, freq: 1.75, damp: 0.62, comY: 1.0, pivotRate: 0.68,
         tractive: 0.6
     },
     bradley_ua: {
         mass: 30000, powerKw: 447, rpmIdle: 750, rpmMax: 2600, gears: 5, topKmh: 61, reverseKmh: 16, shift: 0.3,
-        track: 1.32, axles: [-1.95, -0.65, 0.65, 1.95], wheelR: 0.31, freq: 1.8, damp: 0.6, comY: 1.05, pivotRate: 0.8,
+        track: 1.08, axles: [-1.95, -0.76, 0.44, 1.63], hullZ: [-3.2, 3.25], wheelR: 0.27, freq: 1.8, damp: 0.6, comY: 1.05, pivotRate: 0.8,
         tractive: 0.42
     },
     bmp2_ua: {
         mass: 14000, powerKw: 221, rpmIdle: 800, rpmMax: 2600, gears: 5, topKmh: 65, reverseKmh: 9, shift: 0.4,
-        track: 1.27, axles: [-1.8, -0.6, 0.6, 1.8], wheelR: 0.31, freq: 1.9, damp: 0.58, comY: 0.9, pivotRate: 0.9,
+        track: 1.28, axles: [-1.37, -0.24, 0.89, 2.02], hullZ: [-3.3, 3.3], wheelR: 0.3, freq: 1.9, damp: 0.58, comY: 0.9, pivotRate: 0.9,
         tractive: 0.42
     },
     btr80_ru: {
         mass: 13600, powerKw: 191, rpmIdle: 700, rpmMax: 2600, gears: 5, topKmh: 80, reverseKmh: 13, shift: 0.5,
-        track: 1.2, axles: [-2.11, -0.76, 0.76, 2.11], steer: [1, 0.62, 0, 0], wheelR: 0.56, freq: 1.9, damp: 0.52,
+        track: 1.21, axles: [-2.14, -0.67, 1.05, 2.4], hullZ: [-3.75, 3.75], steer: [1, 0.62, 0, 0], wheelR: 0.62, freq: 1.9, damp: 0.52,
         comY: 1.05, steerMax: 0.45, tireDrop: 0.24, tractive: 0.36, dragArea: 4.6
     },
     humvee_ua: {
         mass: 3500, powerKw: 142, rpmIdle: 700, rpmMax: 3400, gears: 4, topKmh: 105, reverseKmh: 22, shift: 0.3,
-        track: 0.91, axles: [-1.65, 1.65], steer: [1, 0], wheelR: 0.47, freq: 2.1, damp: 0.56, comY: 0.8, tireDrop: 0.2,
+        track: 0.94, axles: [-1.87, 1.32], hullZ: [-2.4, 2.4], steer: [1, 0], wheelR: 0.43, freq: 2.1, damp: 0.56, comY: 0.8, tireDrop: 0.2,
         tractive: 0.3
     },
     uaz452: {
         mass: 2000, powerKw: 82, rpmIdle: 800, rpmMax: 4000, gears: 4, topKmh: 95, reverseKmh: 18, shift: 0.45,
-        track: 0.72, axles: [-1.15, 1.15], steer: [1, 0], wheelR: 0.38, freq: 2.2, damp: 0.56, comY: 0.8, tireDrop: 0.16,
+        track: 0.69, axles: [-1.09, 1.14], hullZ: [-2.0, 2.0], steer: [1, 0], wheelR: 0.365, freq: 2.2, damp: 0.56, comY: 0.8, tireDrop: 0.16,
         tractive: 0.3
     }
 };
@@ -106,12 +108,14 @@ export function getVehicleTuning(spec) {
     const hullBottom = 0.62;
     const hullTop = Math.max(hy * 2.0, 1.7);
     const bx = hx * 0.9;
-    const bz = hz * 0.93;
+    const hullZ = row.hullZ || [-hz * 0.93, hz * 0.93];
+    const zc = (hullZ[0] + hullZ[1]) * 0.5;
+    const bz = (hullZ[1] - hullZ[0]) * 0.5 * 0.97;
     const mid = hullBottom + 0.45;
     const hull = [];
     // Boat-shaped convex hull: the chamfered belly slides over kerbs and debris instead of snagging on them.
     for (const [x, y, z] of [[bx, hullTop, bz], [bx, mid, bz], [bx * 0.86, hullBottom, bz - 0.85]]) {
-        for (const sx of [-1, 1]) for (const sz of [-1, 1]) hull.push(sx * x, y - originY, sz * z);
+        for (const sx of [-1, 1]) for (const sz of [-1, 1]) hull.push(sx * x, y - originY, zc + sz * z);
     }
     const W = bx * 2;
     const H = hullTop - hullBottom;
@@ -127,9 +131,11 @@ export function getVehicleTuning(spec) {
         mass: row.mass,
         originY,
         comLocalY: row.comY - originY,
+        comLocalZ: row.axles.reduce((s, z) => s + z, 0) / row.axles.length,
         hull: new Float32Array(hull),
         hullHalf: [bx, H * 0.5, bz],
         hullCenterY: (hullTop + hullBottom) * 0.5 - originY,
+        hullCenterZ: zc,
         inertia: [row.mass / 12 * (H * H + L * L), row.mass / 12 * (W * W + L * L), row.mass / 12 * (W * W + H * H) * 1.3],
         angularDamping: 0.6,
         points,

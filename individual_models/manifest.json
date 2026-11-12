@@ -35,38 +35,38 @@
   "tris": 9170
  },
  "08_vehicle_bmp2_ua.glb": {
-  "bytes": 3347412,
-  "sha1": "ea17cab92332",
+  "bytes": 3170400,
+  "sha1": "f45d5587b6ad",
   "tris": 66451
  },
  "09_vehicle_btr80_ru.glb": {
-  "bytes": 976340,
-  "sha1": "44cb8a9e57ed",
+  "bytes": 952336,
+  "sha1": "ffce3b66862e",
   "tris": 42690
  },
  "10_vehicle_bradley_m2a3_ua.glb": {
-  "bytes": 408856,
-  "sha1": "036190d81451",
+  "bytes": 441900,
+  "sha1": "ff81200439bf",
   "tris": 11772
  },
  "11_vehicle_humvee_ua.glb": {
-  "bytes": 1298796,
-  "sha1": "8754940d031f",
+  "bytes": 1284408,
+  "sha1": "d09fe381bb8f",
   "tris": 13760
  },
  "12_vehicle_tank_t90m_ru.glb": {
-  "bytes": 2475072,
-  "sha1": "bd3f12f95c15",
+  "bytes": 2477208,
+  "sha1": "4b44f6e6d841",
   "tris": 39355
  },
  "13_vehicle_tank_t72b3_ru.glb": {
-  "bytes": 2071548,
-  "sha1": "067d00ef589a",
+  "bytes": 2109640,
+  "sha1": "a377f54b4f20",
   "tris": 49056
  },
  "14_vehicle_uaz452_bukhanka.glb": {
-  "bytes": 565696,
-  "sha1": "f49b7d1c3577",
+  "bytes": 571092,
+  "sha1": "ed0225ad1013",
   "tris": 7970
  },
  "15_drone_fpv_kamikaze.glb": {

@@ -353,7 +353,7 @@ export class RagdollPhysicsEngine {
         const hitProxyGeo = new THREE.BoxGeometry(hx * 2.0, hy * 2.1, hz * 2.0);
         const hitProxyMat = new THREE.MeshBasicMaterial({ visible: false });
         const hitProxyMesh = new THREE.Mesh(hitProxyGeo, hitProxyMat);
-        hitProxyMesh.position.set(0, hy, 0);
+        hitProxyMesh.position.set(0, hy, tuning.hullCenterZ);
         meshGroup.add(hitProxyMesh);
         meshGroup.position.copy(spawnPos);
         meshGroup.quaternion.copy(initQuat);
@@ -743,22 +743,25 @@ export class RagdollPhysicsEngine {
         return ragdollEntry;
     }
 
-    // quality.ragdolls.max live ragdolls: the oldest settled one (else the oldest) keeps its pose as a
-    // static corpse and gives its bodies back to the solver.
+    // quality.ragdolls.max live ragdolls: the oldest settled one keeps its pose as a static corpse and gives
+    // its bodies back to the solver. With none settled the oldest one that has had time to reach the ground
+    // goes; a body still falling is only frozen once the overflow exceeds two.
     _enforceRagdollLimit() {
         const max = Math.max(1, this.engine?.quality?.profile?.ragdolls?.max ?? 8);
         let live = 0;
         for (const r of this.ragdolls) if (!r.frozen) live++;
         while (live > max) {
             let pick = null;
+            let oldest = null;
             for (const r of this.ragdolls) {
                 if (r.frozen) continue;
-                if (!pick) pick = r;
+                if (!oldest) oldest = r;
                 if (r.settled) {
                     pick = r;
                     break;
                 }
             }
+            if (!pick && oldest && (oldest.age >= 1.2 || live > max + 2)) pick = oldest;
             if (!pick) break;
             this._freezeRagdoll(pick, true);
             live--;

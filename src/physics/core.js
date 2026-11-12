@@ -129,10 +129,10 @@ export function createPhysicsCore(RAPIER, options = {}) {
         if (cmd.av) desc.setAngvel({ x: cmd.av[0], y: cmd.av[1], z: cmd.av[2] });
         const body = world.createRigidBody(desc);
         const shape = RAPIER.ColliderDesc.convexHull(tun.hull)
-            || RAPIER.ColliderDesc.cuboid(tun.hullHalf[0], tun.hullHalf[1], tun.hullHalf[2]).setTranslation(0, tun.hullCenterY, 0);
+            || RAPIER.ColliderDesc.cuboid(tun.hullHalf[0], tun.hullHalf[1], tun.hullHalf[2]).setTranslation(0, tun.hullCenterY, tun.hullCenterZ);
         shape.setMassProperties(
             tun.mass,
-            { x: 0, y: tun.comLocalY, z: 0 },
+            { x: 0, y: tun.comLocalY, z: tun.comLocalZ },
             { x: tun.inertia[0], y: tun.inertia[1], z: tun.inertia[2] },
             IDENT
         ).setFriction(0.3).setRestitution(0.1).setCollisionGroups(groups(G_VEHICLE, 0xffff));
@@ -178,7 +178,9 @@ export function createPhysicsCore(RAPIER, options = {}) {
         const ux = 2 * (q.x * q.y - q.w * q.z), uy = 1 - 2 * (q.x * q.x + q.z * q.z), uz = 2 * (q.y * q.z + q.w * q.x);
         const bx = 2 * (q.x * q.z + q.w * q.y), by = 2 * (q.y * q.z - q.w * q.x), bz = 1 - 2 * (q.x * q.x + q.y * q.y);
         const fx = -bx, fy = -by, fz = -bz;
-        const comX = t.x + ux * tun.comLocalY, comY = t.y + uy * tun.comLocalY, comZ = t.z + uz * tun.comLocalY;
+        const comX = t.x + ux * tun.comLocalY + bx * tun.comLocalZ;
+        const comY = t.y + uy * tun.comLocalY + by * tun.comLocalZ;
+        const comZ = t.z + uz * tun.comLocalY + bz * tun.comLocalZ;
         const vF = lv.x * fx + lv.y * fy + lv.z * fz;
         const speed = Math.abs(vF);
         v.fwdSpeed = vF;
@@ -876,7 +878,6 @@ export function createPhysicsCore(RAPIER, options = {}) {
         get steps() { return steps; },
         get hz() { return hz; },
         counts: () => ({ vehicles: vehicles.length, ragdolls: ragdolls.length, bodies: bodies.length, statics: statics.size }),
-        debug: { world, vehicles, ragdolls, bodies },
         dispose() {
             events.free();
             world.free();
