@@ -252,6 +252,13 @@ export default async ({ shot, wait, ev, log }) => {
         const hips0 = first.bones.hips.getWorldPosition(new T());
         const head0 = first.bones.head.getWorldPosition(new T());
         e.killSoldierWithRagdoll(first, 'TORSO', 'torso', hips0.clone().setY(1.3), dir, wStat, 'ВЫ');
+        // A body hit staggers first: the hand-over is measured when the ragdoll really starts.
+        const started = (u) => e.physics.ragdolls.some((r) => r.unit === u);
+        for (let i = 0; i < 120 && !started(first); i++) step(1);
+        if (!started(first)) fail('the ragdoll never started');
+        first.root.updateWorldMatrix(true, true);
+        first.bones.hips.getWorldPosition(hips0);
+        first.bones.head.getWorldPosition(head0);
         step(1);
         first.root.updateWorldMatrix(true, true);
         out.ragdoll = {
@@ -266,6 +273,7 @@ export default async ({ shot, wait, ev, log }) => {
             step(20);
             const p = victims[i].root.position;
             e.killSoldierWithRagdoll(victims[i], 'TORSO', 'torso', new T(p.x, 1.3, p.z), dir, wStat, 'ВЫ');
+            for (let k = 0; k < 120 && !started(victims[i]); k++) step(1);
             overflow = Math.max(overflow, e.physics.ragdolls.filter((r) => !r.frozen).length - max);
         }
         step(120);
