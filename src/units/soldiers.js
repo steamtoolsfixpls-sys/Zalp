@@ -22,18 +22,23 @@ export const soldierMethods = {
         const bones = this.ragdollPhysics.extractSoldierBones(clonedScene);
 
         const bandColor = faction === 'RU' ? 0xd91b1b : 0x155ce6;
-        const bandMat = new THREE.MeshStandardMaterial({
-            color: bandColor,
-            roughness: 0.55,
-            metalness: 0.08,
-            emissive: bandColor,
-            emissiveIntensity: 0.18
-        });
+        // One armband material and geometry per faction colour, shared by every soldier.
+        const shared = this._armband || (this._armband = { geo: new THREE.CylinderGeometry(8.5, 8.5, 11.0, 14), mats: new Map() });
+        let bandMat = shared.mats.get(bandColor);
+        if (!bandMat) {
+            bandMat = new THREE.MeshStandardMaterial({
+                color: bandColor,
+                roughness: 0.55,
+                metalness: 0.08,
+                emissive: bandColor,
+                emissiveIntensity: 0.18
+            });
+            shared.mats.set(bandColor, bandMat);
+        }
 
         const attachBoneArmband = (armBone) => {
             if (!armBone) return;
-            const bandGeo = new THREE.CylinderGeometry(8.5, 8.5, 11.0, 14);
-            const bandMesh = new THREE.Mesh(bandGeo, bandMat);
+            const bandMesh = new THREE.Mesh(shared.geo, bandMat);
             bandMesh.position.set(0, 12.0, 0);
             armBone.add(bandMesh);
         };
@@ -43,6 +48,7 @@ export const soldierMethods = {
         const weaponKey = faction === 'RU' ? 'weapon_ak12' : 'weapon_m4a1';
         const rifleMesh = this.instantiateStaticModel(weaponKey, 0.78);
         if (bones.chest) {
+            // Carried pose until the animator takes over: it recomputes this transform every frame.
             rifleMesh.position.set(0.16, -0.05, 0.34);
             rifleMesh.rotation.set(0, Math.PI, 0);
             root.add(rifleMesh);
@@ -71,6 +77,7 @@ export const soldierMethods = {
             homeYaw: customYaw,
             root: built.root,
             bones: built.bones,
+            modelNode: built.modelNode || null,
             hp: 100,
             maxHp: 100,
             isDead: false,
@@ -90,11 +97,14 @@ export const soldierMethods = {
 
         this.ragdollPhysics.attachAnatomicalHitboxes(unit);
         this.units.push(unit);
+        if (this.anim && typeof this.anim.attach === 'function') this.anim.attach(unit);
         return unit;
     },
 
     respawnDeadSoldier(unit) {
         this.ragdollPhysics.removeRagdoll(unit);
+        if (unit.animator && typeof unit.animator.dispose === 'function') unit.animator.dispose();
+        unit.animator = null;
 
         this.scene.remove(unit.root);
         const built = this.instantiateSkinnedSoldier(unit.faction);
@@ -104,9 +114,15 @@ export const soldierMethods = {
 
         unit.root = built.root;
         unit.bones = built.bones;
+        unit.modelNode = built.modelNode || null;
         unit.hp = unit.maxHp;
         unit.isDead = false;
+        unit.isWounded = false;
+        unit.flinchAmount = 0;
         unit.mountedVehicle = null;
+        unit.velocity.set(0, 0, 0);
         this.ragdollPhysics.attachAnatomicalHitboxes(unit);
+        if (this.anim && typeof this.anim.attach === 'function') this.anim.attach(unit);
+        this.events.emit('unit:respawned', { unit });
     },
 };
