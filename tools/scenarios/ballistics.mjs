@@ -20,7 +20,7 @@ export default async ({ shot, wait, ev, log }) => {
         e.events.on('unit:hit', (p) => rec.unitHits.push({ unit: p.unit, zone: p.zone, damage: p.damage }));
         e.events.on('bullet:nearmiss', (p) => rec.near.push({ target: p.target === 'player' ? 'player' : 'unit', dist: p.dist }));
         e.events.on('era:detonated', (p) => rec.era.push(p.vehicle.id));
-        e.events.on('explosion', (p) => rec.expl.push({ kind: p.kind, label: p.label }));
+        e.events.on('explosion', (p) => rec.expl.push({ kind: p.kind, label: p.label, x: p.pos.x, z: p.pos.z, t: e.time }));
         e.events.on('player:hit', (p) => rec.playerHits.push(p.amount));
         const step = window.BATTLE_ENGINE.step;
         window.__flush = (max = 240, dt = 1 / 60) => {
@@ -288,6 +288,57 @@ export default async ({ shot, wait, ev, log }) => {
         return { hp0, hp1, nearDist: Number(near[0].dist.toFixed(2)) };
     });
     log('BALLISTICS player', JSON.stringify(player));
+
+    // 7b. ordnance: cooked grenade with bounces and a fuse, smoke, a mine on [7], an AI grenade throw
+    const ord = await ev(() => {
+        const e = window.BATTLE_ENGINE.instance;
+        const V = window.__THREE.Vector3;
+        const step = window.BATTLE_ENGINE.step;
+        const rec = window.__rec;
+        const o = e.ordnance;
+        const out = {};
+        e.yaw = Math.PI / 2;
+        e.pitch = 0.3;
+        step(3);
+        const frag0 = o.inventory.frag;
+        const explBefore = rec.expl.length;
+        e.input.press('Digit5');
+        step(36);
+        e.input.release('Digit5');
+        if (o.liveGrenades.length !== 1 || o.inventory.frag !== frag0 - 1) throw new Error('the grenade was not thrown');
+        const g = o.liveGrenades[0];
+        const t0 = e.time;
+        let frames = 0;
+        while (o.liveGrenades.length && frames < 600) { step(1); frames++; }
+        const grenade = rec.expl.slice(explBefore).find((x) => x.kind === 'grenade');
+        if (!grenade) throw new Error('the grenade never exploded');
+        out.grenade = { fuseAfterRelease: Number((grenade.t - t0).toFixed(2)), bounces: g.bounces, landedX: Number(grenade.x.toFixed(1)) };
+        if (!(out.grenade.fuseAfterRelease > 2.0 && out.grenade.fuseAfterRelease < 3.6)) throw new Error(`fuse after a 0.6 s cook: ${out.grenade.fuseAfterRelease}`);
+        if (g.bounces < 1) throw new Error('the grenade did not bounce');
+        if (!(grenade.x < -8)) throw new Error('the grenade did not fly');
+        const smoke = [];
+        e.events.on('smoke:deployed', (p) => smoke.push(p.kind));
+        e.input.tap('Digit6');
+        step(90);
+        if (smoke[0] !== 'rdg2') throw new Error('no smoke:deployed');
+        const mines0 = o.mines.length;
+        const inv0 = o.inventory.mine;
+        e.input.tap('Digit7');
+        if (o.mines.length !== mines0 + 1 || o.inventory.mine !== inv0 - 1) throw new Error('the mine was not placed on [7]');
+        const mine = o.mines[o.mines.length - 1];
+        out.mine = { x: Number(mine.pos.x.toFixed(2)), y: Number(mine.pos.y.toFixed(3)) };
+        const eb = rec.expl.length;
+        const ag = o.throwGrenade({ from: new V(-100, 1.6, 150), target: new V(-122, 0, 150), type: 'F1', thrower: window.__ua(6) });
+        if (!ag) throw new Error('the AI grenade throw was refused');
+        let n = 0;
+        while (o.liveGrenades.length && n < 600) { step(1); n++; }
+        const hit = rec.expl.slice(eb).find((x) => x.kind === 'grenade');
+        if (!hit || Math.hypot(hit.x + 122, hit.z - 150) > 12) throw new Error(`the AI grenade landed off target: ${JSON.stringify(hit)}`);
+        out.ai = { x: Number(hit.x.toFixed(1)), z: Number(hit.z.toFixed(1)) };
+        e.pitch = 0;
+        return out;
+    });
+    log('BALLISTICS ordnance', JSON.stringify(ord));
 
     // 8. RPG backblast hurts and pushes a soldier standing behind the launcher
     const blast = await ev(() => {
