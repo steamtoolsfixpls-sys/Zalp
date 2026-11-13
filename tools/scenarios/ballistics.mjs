@@ -142,7 +142,9 @@ export default async ({ shot, wait, ev, log }) => {
             return rec.unitHits[rec.unitHits.length - 1].damage;
         };
         const direct = shootAt();
-        const crate = window.__box(1.4, 1.6, 0.5, aim.x, 0.8, aim.z - 12, { surface: 'wood', penetrable: { mm: 90, material: 'crate' } });
+        // Close to the soldier: the random deflection after a penetration (up to about 2 degrees) must not
+        // carry the round off the chest, or the two shots would compare different hit zones.
+        const crate = window.__box(1.4, 1.6, 0.5, aim.x, 0.8, aim.z - 1.2, { surface: 'wood', penetrable: { mm: 90, material: 'crate' } });
         const nImp = rec.impacts.length;
         const through = shootAt();
         const penetrations = rec.impacts.slice(nImp).filter((i) => i.penetrated).length;
