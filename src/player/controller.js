@@ -210,8 +210,8 @@ export const playerControllerMethods = {
         }
 
         const pStat = STATS.PLAYER;
-        this.isSprinting = Boolean(this.keys['ShiftLeft'] && this.keys['KeyW'] && !this.isCrouching && !this.isAiming);
-        const speed = this.isCrouching ? pStat.crouchSpeed : (this.isSprinting ? pStat.sprintSpeed : pStat.walkSpeed);
+        this.isSprinting = Boolean(this.keys['ShiftLeft'] && this.keys['KeyW'] && !this.isCrouching && !this.isAiming) && this.modifier('canSprint') > 0;
+        const speed = (this.isCrouching ? pStat.crouchSpeed : (this.isSprinting ? pStat.sprintSpeed : pStat.walkSpeed)) * this.modifier('playerSpeed');
 
         const forward = new THREE.Vector3(-Math.sin(this.yaw), 0, -Math.cos(this.yaw));
         const right = new THREE.Vector3(Math.cos(this.yaw), 0, -Math.sin(this.yaw));

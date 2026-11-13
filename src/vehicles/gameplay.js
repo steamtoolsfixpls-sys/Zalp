@@ -196,6 +196,8 @@ export const vehicleGameplayMethods = {
         this.scene.add(flashLight);
         this.dynamicLights.push({ light: flashLight, ttl: 0.14, maxTtl: 0.14 });
 
+        if (this.ballistics?.fireVehicleWeapon?.(vehicle, muzzleWorld, aimDir, vehicle.shellType) === true) return;
+
         if (vehicle.spec.isHeavyCannon) {
             const shellGroup = new THREE.Group();
             const shellMesh = new THREE.Mesh(
