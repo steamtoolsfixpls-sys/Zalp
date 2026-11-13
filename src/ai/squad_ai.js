@@ -47,15 +47,19 @@ export const squadAiMethods = {
                         0.9 + Math.random() * 0.6,
                         (Math.random() - 0.5) * 1.8
                     ));
-                    this.spawnTracerBeam(muzzlePos, targetPos, unit.faction === 'RU' ? 0x44ff55 : 0xff4433);
-                    this.events.emit('shot', { pos: muzzlePos, dir: targetPos.clone().sub(muzzlePos).normalize(), weapon: unit.faction === 'RU' ? STATS.WEAPONS.ak12 : STATS.WEAPONS.m4a1, shooter: unit, isPlayer: false, faction: unit.faction });
+                    const wUsed = unit.faction === 'RU' ? STATS.WEAPONS.ak12 : STATS.WEAPONS.m4a1;
+                    // A physical round (can also hit the player); the dice roll below is the fallback.
+                    const physical = this.ballistics?.aiFire?.(unit, muzzlePos, targetPos, wUsed, nearestEnemy) === true;
+                    if (!physical) {
+                        this.spawnTracerBeam(muzzlePos, targetPos, unit.faction === 'RU' ? 0x44ff55 : 0xff4433);
+                        this.events.emit('shot', { pos: muzzlePos, dir: targetPos.clone().sub(muzzlePos).normalize(), weapon: wUsed, shooter: unit, isPlayer: false, faction: unit.faction });
+                    }
                     const distToCam = this.cameraMount.position.distanceTo(muzzlePos);
                     if (distToCam < 65.0) {
                         this.sound.playGunshot(distToCam, false);
                     }
-                    if (Math.random() < 0.24) {
+                    if (!physical && Math.random() < 0.24) {
                         const shotDir = targetPos.clone().sub(muzzlePos).normalize();
-                        const wUsed = unit.faction === 'RU' ? STATS.WEAPONS.ak12 : STATS.WEAPONS.m4a1;
                         this.applyBulletHitToSoldier(nearestEnemy, 'TORSO', 'torso', targetPos, shotDir, wUsed, `${unit.name} (С БРОНИ)`);
                     }
                 }
@@ -120,15 +124,18 @@ export const squadAiMethods = {
                     (Math.random() - 0.5) * 1.6
                 ));
 
-                this.spawnTracerBeam(muzzlePos, targetPos, unit.faction === 'RU' ? 0x44ff55 : 0xff4433);
-                this.events.emit('shot', { pos: muzzlePos, dir: targetPos.clone().sub(muzzlePos).normalize(), weapon: unit.faction === 'RU' ? STATS.WEAPONS.ak12 : STATS.WEAPONS.m4a1, shooter: unit, isPlayer: false, faction: unit.faction });
+                const wUsed = unit.faction === 'RU' ? STATS.WEAPONS.ak12 : STATS.WEAPONS.m4a1;
+                const physical = this.ballistics?.aiFire?.(unit, muzzlePos, targetPos, wUsed, nearestEnemy) === true;
+                if (!physical) {
+                    this.spawnTracerBeam(muzzlePos, targetPos, unit.faction === 'RU' ? 0x44ff55 : 0xff4433);
+                    this.events.emit('shot', { pos: muzzlePos, dir: targetPos.clone().sub(muzzlePos).normalize(), weapon: wUsed, shooter: unit, isPlayer: false, faction: unit.faction });
+                }
                 const distToCam = this.cameraMount.position.distanceTo(muzzlePos);
                 if (distToCam < 65.0) {
                     this.sound.playGunshot(distToCam, false);
                 }
-                if (Math.random() < 0.2) {
+                if (!physical && Math.random() < 0.2) {
                     const shotDir = targetPos.clone().sub(muzzlePos).normalize();
-                    const wUsed = unit.faction === 'RU' ? STATS.WEAPONS.ak12 : STATS.WEAPONS.m4a1;
                     this.applyBulletHitToSoldier(nearestEnemy, 'TORSO', 'torso', targetPos, shotDir, wUsed, unit.name);
                 }
             }
