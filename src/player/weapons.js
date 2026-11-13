@@ -88,6 +88,7 @@ export const playerWeaponMethods = {
 
     tryFireCurrentWeapon() {
         if (this.fpvMode.active || this.playerVehicleState.role === 'DRIVER') return;
+        if (this.modifier('canFire') <= 0) return;
         const key = this.loadoutKeys[this.currentWeaponIdx];
         const wStat = STATS.WEAPONS[key];
         const wState = this.weaponStates[key];
@@ -120,7 +121,7 @@ export const playerWeaponMethods = {
         });
         this.muzzleLight.intensity = wStat.isExplosive ? 12.0 : 6.5;
 
-        const adsMult = this.isAiming ? 0.58 : 1.0;
+        const adsMult = (this.isAiming ? 0.58 : 1.0) * this.modifier('recoil');
         this.posSpring.applyImpulse(
             (Math.random() - 0.5) * 0.45 * adsMult,
             wStat.recoilRise * 28.0 * adsMult,
