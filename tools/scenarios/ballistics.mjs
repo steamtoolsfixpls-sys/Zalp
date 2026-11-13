@@ -20,7 +20,7 @@ export default async ({ shot, wait, ev, log }) => {
         e.events.on('unit:hit', (p) => rec.unitHits.push({ unit: p.unit, zone: p.zone, damage: p.damage }));
         e.events.on('bullet:nearmiss', (p) => rec.near.push({ target: p.target === 'player' ? 'player' : 'unit', dist: p.dist }));
         e.events.on('era:detonated', (p) => rec.era.push(p.vehicle.id));
-        e.events.on('explosion', (p) => rec.expl.push({ kind: p.kind, label: p.label }));
+        e.events.on('explosion', (p) => rec.expl.push({ kind: p.kind, label: p.label, x: p.pos.x, z: p.pos.z, t: e.time }));
         e.events.on('player:hit', (p) => rec.playerHits.push(p.amount));
         const step = window.BATTLE_ENGINE.step;
         window.__flush = (max = 240, dt = 1 / 60) => {

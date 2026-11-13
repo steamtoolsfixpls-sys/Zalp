@@ -72,6 +72,7 @@ export function createHealth(engine) {
     let pulse = 0;
     let dirAngle = 0;
     let dirAlpha = 0;
+    const last = { pulse: -1, dir: -1, rot: 0, faint: -1, sec: -1 };
     let lastFilter = -1;
     let lastTunnel = -1;
     let lastVig = -1;
@@ -450,18 +451,40 @@ export function createHealth(engine) {
             lastVig = vigOpacity;
             ui.vig.style.opacity = String(vigOpacity);
         }
-        ui.pulse.style.opacity = (Math.min(1, pulse * 1.1 + beat * intensity * 0.35)).toFixed(2);
-        ui.dir.style.opacity = dirAlpha.toFixed(2);
-        ui.dir.style.transform = `rotate(${dirAngle.toFixed(3)}rad)`;
-        const faint = state.consciousness === 'unconscious' ? 0.55 + 0.35 * Math.sin(time * 2.2) : 0;
-        ui.faint.style.opacity = Math.max(0, faint).toFixed(2);
+        // Style writes only when a quantised value changes: no strings are built while nothing moves.
+        const pulseQ = Math.round(Math.min(1, pulse * 1.1 + beat * intensity * 0.35) * 50);
+        if (pulseQ !== last.pulse) {
+            last.pulse = pulseQ;
+            ui.pulse.style.opacity = String(pulseQ / 50);
+        }
+        const dirQ = Math.round(dirAlpha * 50);
+        if (dirQ !== last.dir) {
+            last.dir = dirQ;
+            ui.dir.style.opacity = String(dirQ / 50);
+        }
+        const rotQ = Math.round(dirAngle * 100);
+        if (rotQ !== last.rot && dirQ > 0) {
+            last.rot = rotQ;
+            ui.dir.style.transform = `rotate(${rotQ / 100}rad)`;
+        }
+        const faintQ = state.consciousness === 'unconscious' ? Math.max(0, Math.round((0.55 + 0.35 * Math.sin(time * 2.2)) * 25)) : 0;
+        if (faintQ !== last.faint) {
+            last.faint = faintQ;
+            ui.faint.style.opacity = String(faintQ / 25);
+        }
         const gray = Math.round(Math.max(0, Math.min(0.85, (0.65 - bf) / 0.65)) * 20) / 20;
         if (gray !== lastFilter) {
             lastFilter = gray;
             const canvas = engine.renderer && engine.renderer.domElement;
             if (canvas) canvas.style.filter = gray > 0 ? `grayscale(${gray})` : '';
         }
-        if (state.dead) setText(ui.deathSub, `ВОЗРОЖДЕНИЕ ЧЕРЕЗ ${Math.max(0, Math.ceil(state.deathTimer))} С`);
+        if (state.dead) {
+            const sec = Math.max(0, Math.ceil(state.deathTimer));
+            if (sec !== last.sec) {
+                last.sec = sec;
+                ui.deathSub.textContent = `ВОЗРОЖДЕНИЕ ЧЕРЕЗ ${sec} С`;
+            }
+        }
     }
 
     // ------------------------------------------------------------------ frame

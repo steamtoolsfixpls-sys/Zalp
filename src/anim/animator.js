@@ -36,9 +36,21 @@ const _gripW = new THREE.Vector3();
 const _handW = new THREE.Vector3();
 const _wrapPos = new THREE.Vector3();
 const _wrapQuat = new THREE.Quaternion();
-const _muz = new THREE.Vector3();
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+let gear = null;
+function gearAssets() {
+    if (!gear) {
+        gear = {
+            plate: new THREE.BoxGeometry(0.22, 0.28, 0.026),
+            pouch: new THREE.BoxGeometry(0.09, 0.11, 0.05),
+            mag: new THREE.BoxGeometry(0.04, 0.15, 0.026),
+            mat: new THREE.MeshStandardMaterial({ color: 0x2c3126, roughness: 0.85 })
+        };
+    }
+    return gear;
+}
 
 export class Animator {
     constructor(engine, unit, tpl, weaponKey) {
@@ -558,6 +570,36 @@ export class Animator {
             friction: 0.7,
             restitution: 0.2
         });
+        this.scatterGear();
+    }
+
+    // Plate, pouch and magazine come off the body (shared geometry and material, budgeted by quality.debris.max).
+    scatterGear() {
+        const e = this.engine;
+        const b = this.unit.bones;
+        if (!b.chest || !b.hips || (e.quality.profile.debris.max || 0) < 30) return;
+        const g = gearAssets();
+        const v = this.unit.velocity;
+        const pieces = [
+            [g.plate, b.chest, [0.11, 0.14, 0.013], 1.6],
+            [g.pouch, b.hips, [0.045, 0.055, 0.025], 0.4],
+            [g.mag, b.hips, [0.02, 0.075, 0.013], 0.5]
+        ];
+        for (const [geo, bone, half, mass] of pieces) {
+            const mesh = new THREE.Mesh(geo, g.mat);
+            bone.getWorldPosition(mesh.position);
+            mesh.position.y += 0.05;
+            mesh.castShadow = false;
+            e.physics.spawnDebris(mesh, {
+                shape: { type: 'box', half },
+                mass,
+                linvel: { x: (v ? v.x : 0) + (Math.random() - 0.5) * 3, y: 1 + Math.random() * 1.5, z: (v ? v.z : 0) + (Math.random() - 0.5) * 3 },
+                angvel: { x: (Math.random() - 0.5) * 10, y: (Math.random() - 0.5) * 10, z: (Math.random() - 0.5) * 10 },
+                ttl: 10,
+                friction: 0.7,
+                restitution: 0.25
+            });
+        }
     }
 
     advanceDeath(dt) {
