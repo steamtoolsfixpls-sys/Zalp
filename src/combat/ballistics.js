@@ -1069,6 +1069,7 @@ export function createBallistics(engine) {
     // AI rifle shot: aims at `targetPos` (or at the player when it is the closer threat), real round, real spread.
     const _aim = new THREE.Vector3();
     const _aimDir = new THREE.Vector3();
+    const _aimMuzzle = new THREE.Vector3();
     function aiFire(unit, muzzle, targetPos, wStat, enemyUnit) {
         if (!unit || !targetPos) return false;
         _aim.copy(targetPos);
@@ -1086,11 +1087,19 @@ export function createBallistics(engine) {
                 spread = 0.006 + 0.00014 * pd;
             }
         }
-        _aimDir.subVectors(_aim, muzzle);
+        // Rounds leave the real muzzle of the carried rifle when the animator provides one.
+        let origin = muzzle;
+        const an = unit.animator;
+        if (an && !an.stopped && typeof an.muzzleWorld === 'function') {
+            an.setAim(_aim);
+            origin = an.muzzleWorld(_aimMuzzle);
+            an.trigger('shoot');
+        }
+        _aimDir.subVectors(_aim, origin);
         if (_aimDir.lengthSq() < 0.01) return false;
         _aimDir.normalize();
         fire({
-            origin: muzzle, dir: _aimDir, ammo: wStat && wStat.id ? WEAPON_AMMO[wStat.id] || wStat.id : undefined,
+            origin, dir: _aimDir, ammo: wStat && wStat.id ? WEAPON_AMMO[wStat.id] || wStat.id : undefined,
             weapon: wStat, shooter: unit, faction: unit.faction, spread, attacker: unit.name
         });
         return true;
